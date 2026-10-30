@@ -1,9 +1,6 @@
-
 from abc import ABC, abstractmethod
 
-
 class LivroRepository(ABC):
-    """Define o contrato para o armazenamento dos livros."""
 
     @abstractmethod
     def listar_livros(self):
@@ -27,4 +24,12 @@ class LivroRepository(ABC):
 
     @abstractmethod
     def remover_favorito(self, titulo):
+        pass
+
+    @abstractmethod
+    def obter_horario(self):
+        pass
+
+    @abstractmethod
+    def obter_localizacao(self):
         pass
