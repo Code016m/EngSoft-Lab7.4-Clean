@@ -1,0 +1,55 @@
+
+{
+    "livros": [
+        {
+            "titulo": "Dom Casmurro",
+            "autor": "Machado de Assis",
+            "preco": 30.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "O Cortiço",
+            "autor": "Aluísio Azevedo",
+            "preco": 35.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "Memórias Póstumas de Brás Cubas",
+            "autor": "Machado de Assis",
+            "preco": 32.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "Grande Sertão: Veredas",
+            "autor": "João Guimarães Rosa",
+            "preco": 45.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "Capitães da Areia",
+            "autor": "Jorge Amado",
+            "preco": 38.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "A Hora da Estrela",
+            "autor": "Clarice Lispector",
+            "preco": 28.0,
+            "disponivel": true,
+            "lojas": ["Loja Centro"]
+        },
+        {
+            "titulo": "Vidas Secas",
+            "autor": "Graciliano Ramos",
+            "preco": 34.0,
+            "disponivel": false,
+            "lojas": []
+        }
+    ],
+    "favoritos": []
+}
