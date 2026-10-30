@@ -7,12 +7,13 @@ from use_cases.consultar_informacoes import ConsultarInformacoes
 from controllers.livraria_controller import criar_livraria_controller
 
 
-def create_app():
+def create_app(repository=None):
     """Cria e configura a aplicação Flask."""
     app = Flask(__name__)
 
     # Infraestrutura
-    repository = ArquivoTxtRepository()
+    if repository is None:
+        repository = ArquivoTxtRepository()
 
     # Casos de uso
     listar_livros_uc = ListarLivros(repository)

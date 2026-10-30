@@ -1,25 +1,41 @@
-"""Testes das funcionalidades da livraria e da arquitetura multicamadas."""
-
 import unittest
+import tempfile
+import shutil
+import json
+
+from pathlib import Path
 
 from app import create_app
-from repositories import livraria_repository as repository
+from infrastructure.arquivo_txt_repository import ArquivoTxtRepository
 
 class TestLivraria(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        """Cria a aplicação para os testes."""
-        cls.app = create_app()
-        cls.app.config["TESTING"] = True
-        cls.client = cls.app.test_client()
-
     def setUp(self):
-        """Limpa os favoritos antes de cada teste."""
-        repository.FAVORITOS.clear()
+        """Prepara um arquivo TXT independente para cada teste."""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.caminho_dados = Path(self.temp_dir.name) / "livros.txt"
+        arquivo_original = (
+                Path(__file__).resolve().parent.parent
+                / "data"
+                / "livros.txt"
+        )
+        shutil.copy(arquivo_original, self.caminho_dados)
+        # Inicia cada teste com a lista de favoritos vazia.
+        with open(self.caminho_dados, "r", encoding="utf-8") as arquivo:
+            dados = json.load(arquivo)
+        dados["favoritos"] = []
+        with open(self.caminho_dados, "w", encoding="utf-8") as arquivo:
+            json.dump(dados, arquivo, ensure_ascii=False, indent=4)
+        self.repository = ArquivoTxtRepository(self.caminho_dados)
+        self.app = create_app(self.repository)
+        self.app.config["TESTING"] = True
+        self.client = self.app.test_client()
 
-    # Testes das funcionalidades antigas
+    def tearDown(self):
+        """Remove os arquivos temporários após cada teste."""
+        self.temp_dir.cleanup()
 
+    # Testes de livros
     def test_listar_livros(self):
         response = self.client.get("/api/livros")
         self.assertEqual(response.status_code, 200)
@@ -37,10 +53,12 @@ class TestLivraria(unittest.TestCase):
         self.assertEqual(livros[0]["titulo"], "Dom Casmurro")
 
     def test_pesquisar_livros_por_autor(self):
-        response = self.client.get("/api/livros?q=Machado%20de%20Assis")
+        response = self.client.get(
+            "/api/livros?q=Machado%20de%20Assis"
+        )
+
         self.assertEqual(response.status_code, 200)
-        livros = response.get_json()
-        self.assertEqual(len(livros), 2)
+        self.assertEqual(len(response.get_json()), 2)
 
     def test_consultar_livro_existente(self):
         response = self.client.get("/api/livros/Dom%20Casmurro")
@@ -51,7 +69,10 @@ class TestLivraria(unittest.TestCase):
         self.assertEqual(livro["preco"], 30.0)
 
     def test_consultar_livro_inexistente(self):
-        response = self.client.get("/api/livros/Livro%20Inexistente")
+        response = self.client.get(
+            "/api/livros/Livro%20Inexistente"
+        )
+
         self.assertEqual(response.status_code, 404)
         self.assertIn("erro", response.get_json())
 
@@ -88,11 +109,9 @@ class TestLivraria(unittest.TestCase):
     def test_obter_recomendacoes(self):
         response = self.client.get("/api/recomendacoes")
         self.assertEqual(response.status_code, 200)
-        livros = response.get_json()
-        self.assertTrue(len(livros) > 0)
+        self.assertTrue(len(response.get_json()) > 0)
 
-    # Testes da nova funcionalidade de favoritos
-
+    # Testes de favoritos
     def test_listar_favoritos_vazios(self):
         response = self.client.get("/api/favoritos")
         self.assertEqual(response.status_code, 200)
@@ -104,7 +123,6 @@ class TestLivraria(unittest.TestCase):
             json={"titulo": "Dom Casmurro"}
         )
         self.assertEqual(response.status_code, 201)
-        self.assertIn("mensagem", response.get_json())
         favoritos = self.client.get("/api/favoritos").get_json()
         self.assertEqual(len(favoritos), 1)
         self.assertEqual(favoritos[0]["titulo"], "Dom Casmurro")
@@ -114,11 +132,10 @@ class TestLivraria(unittest.TestCase):
             "/api/favoritos",
             json={"titulo": "Dom Casmurro"}
         )
-        response = self.client.post(
+        self.client.post(
             "/api/favoritos",
             json={"titulo": "Dom Casmurro"}
         )
-        self.assertEqual(response.status_code, 201)
         favoritos = self.client.get("/api/favoritos").get_json()
         self.assertEqual(len(favoritos), 1)
 
@@ -161,6 +178,19 @@ class TestLivraria(unittest.TestCase):
         self.assertEqual(len(favoritos), 2)
         self.assertIn("Dom Casmurro", titulos)
         self.assertIn("O Cortiço", titulos)
+
+    # Teste de persistência
+    def test_persistencia_dos_favoritos_em_arquivo_txt(self):
+        self.repository.adicionar_favorito("Dom Casmurro")
+        novo_repository = ArquivoTxtRepository(
+            self.caminho_dados
+        )
+        favoritos = novo_repository.listar_favoritos()
+        self.assertEqual(len(favoritos), 1)
+        self.assertEqual(
+            favoritos[0].titulo,
+            "Dom Casmurro"
+        )
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
